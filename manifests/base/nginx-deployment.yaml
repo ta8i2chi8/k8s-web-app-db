@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: web
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx
+    env: dev
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 29999
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: web
+spec:
+  revisionHistoryLimit: 1
+  replicas: 2
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: nginx
+      env: dev
+  template:
+    metadata:
+      labels:
+        app: nginx
+        env: dev
+    spec:
+      securityContext:
+        runAsUser: 101
+        runAsNonRoot: true
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: nginx
+          image: ghcr.io/ta8i2chi8/nuxt-nginx:latest
+          imagePullPolicy: Always
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "echo \"PreStop sleep started. \"; sleep 10; echo \"PreStop done. \""]
+          securityContext:
+            privileged: false
+          resources: 
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /healthcheck
+              port: 29999
+            initialDelaySeconds: 60
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 29999
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 15
+            successThreshold: 1
+            failureThreshold: 3
+          # readinessProbe:
+          #   httpGet:
+          #     path: /api/healthcheck
+          #     port: 29999
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          #   timeoutSeconds: 15
+          #   successThreshold: 1
+          #   failureThreshold: 3
+          # imagePullSecrets:
+          #   - name: xxxxxxxxx
