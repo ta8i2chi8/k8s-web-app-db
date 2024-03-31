@@ -60,3 +60,6 @@ kubectl delete -f mysql-hostpath-pv.yaml -f mysql-deployment.yaml -f mysql-secre
 
 
 ## インフラ構成図
+![web-app-db drawio](https://github.com/ta8i2chi8/k8s-web-app-db/assets/66934929/c32c60d1-7bfb-4728-9e53-335c69507f6c)
+
+
